@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 500" width="100%" role="img" aria-label="大彤小熠 AI儿童智能体 Logo">
+  <defs>
+    <linearGradient id="gradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1b2e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradDatong" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E84315;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradXiaoyi" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0096D6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradConnect" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:0.6" />
+      <stop offset="50%" style="stop-color:#9B59B6;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#00D4FF;stop-opacity:0.6" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="680" height="500" fill="url(#gradBg)" rx="16"/>
+
+  <!-- Tech grid -->
+  <g opacity="0.08" stroke="#4FC3F7" stroke-width="0.5">
+    <line x1="60" y1="60" x2="620" y2="60"/>
+    <line x1="60" y1="120" x2="620" y2="120"/>
+    <line x1="60" y1="180" x2="620" y2="180"/>
+    <line x1="60" y1="240" x2="620" y2="240"/>
+    <line x1="60" y1="300" x2="620" y2="300"/>
+    <line x1="60" y1="360" x2="620" y2="360"/>
+    <line x1="60" y1="420" x2="620" y2="420"/>
+    <line x1="120" y1="40" x2="120" y2="440"/>
+    <line x1="200" y1="40" x2="200" y2="440"/>
+    <line x1="280" y1="40" x2="280" y2="440"/>
+    <line x1="360" y1="40" x2="360" y2="440"/>
+    <line x1="440" y1="40" x2="440" y2="440"/>
+    <line x1="520" y1="40" x2="520" y2="440"/>
+    <line x1="600" y1="40" x2="600" y2="440"/>
+  </g>
+
+  <!-- Hexagonal frame -->
+  <g opacity="0.15">
+    <polygon points="340,62 428,112 428,212 340,260 252,212 252,112" fill="none" stroke="#4FC3F7" stroke-width="1"/>
+    <polygon points="340,72 420,118 420,208 340,252 260,208 260,118" fill="none" stroke="#4FC3F7" stroke-width="0.5"/>
+  </g>
+
+  <!-- Neural nodes on hex -->
+  <g fill="#4FC3F7" opacity="0.3">
+    <circle cx="340" cy="62" r="2.5"/>
+    <circle cx="428" cy="112" r="2.5"/>
+    <circle cx="428" cy="212" r="2.5"/>
+    <circle cx="340" cy="260" r="2.5"/>
+    <circle cx="252" cy="212" r="2.5"/>
+    <circle cx="252" cy="112" r="2.5"/>
+  </g>
+
+  <!-- ===== 大彤 (Warm Orange) ===== -->
+  <g transform="translate(275,145)">
+    <!-- Glow -->
+    <circle cx="0" cy="0" r="50" fill="url(#gradDatong)" opacity="0.08" filter="url(#glow)"/>
+    <!-- Body -->
+    <circle cx="0" cy="0" r="40" fill="#1A0D0A" stroke="url(#gradDatong)" stroke-width="2"/>
+    <circle cx="0" cy="0" r="36" fill="none" stroke="#FF6B35" stroke-width="0.5" opacity="0.3"/>
+    <!-- Inner ring -->
+    <circle cx="0" cy="-6" r="24" fill="none" stroke="#FF6B35" stroke-width="1" opacity="0.4"/>
+    <!-- Face -->
+    <circle cx="0" cy="-6" r="20" fill="#2A1510" stroke="#FF6B35" stroke-width="1.5"/>
+    <!-- Eyes -->
+    <g fill="#FF9A6C">
+      <ellipse cx="-7" cy="-10" rx="4" ry="4.5"/>
+      <ellipse cx="7" cy="-10" rx="4" ry="4.5"/>
+      <circle cx="-6" cy="-11" r="1.5" fill="#FFD4B8"/>
+      <circle cx="8" cy="-11" r="1.5" fill="#FFD4B8"/>
+    </g>
+    <!-- Big smile -->
+    <path d="M-8,2 Q0,12 8,2" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Antenna -->
+    <line x1="0" y1="-28" x2="0" y2="-42" stroke="#FF6B35" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="0" cy="-44" r="3" fill="#FF9A6C" filter="url(#glow)"/>
+    <!-- Arms -->
+    <line x1="-28" y1="5" x2="-44" y2="12" stroke="#FF6B35" stroke-width="2" stroke-linecap="round"/>
+    <line x1="28" y1="5" x2="44" y2="12" stroke="#FF6B35" stroke-width="2" stroke-linecap="round"/>
+    <!-- Data wave -->
+    <path d="M-14,18 L-10,14 L-6,22 L-2,14 L2,22 L6,14 L10,22 L14,18" fill="none" stroke="#FF9A6C" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+    <!-- Tech dots -->
+    <circle cx="-20" cy="-20" r="1.5" fill="#FF6B35" opacity="0.4"/>
+    <circle cx="20" cy="-22" r="1.5" fill="#FF6B35" opacity="0.4"/>
+  </g>
+
+  <!-- ===== 小熠 (Cyan Star) ===== -->
+  <g transform="translate(405,145)">
+    <!-- Glow -->
+    <circle cx="0" cy="0" r="50" fill="url(#gradXiaoyi)" opacity="0.08" filter="url(#glow)"/>
+    <!-- Body -->
+    <circle cx="0" cy="0" r="40" fill="#0A1820" stroke="url(#gradXiaoyi)" stroke-width="2"/>
+    <circle cx="0" cy="0" r="36" fill="none" stroke="#00D4FF" stroke-width="0.5" opacity="0.3"/>
+    <!-- Inner ring -->
+    <circle cx="0" cy="-6" r="24" fill="none" stroke="#00D4FF" stroke-width="1" opacity="0.4"/>
+    <!-- Star emblem -->
+    <polygon points="0,-28 4,-14 18,-14 8,-4 12,12 0,4 -12,12 -8,-4 -18,-14 -4,-14" fill="none" stroke="#00D4FF" stroke-width="1" opacity="0.25"/>
+    <!-- Face -->
+    <circle cx="0" cy="-6" r="20" fill="#0A2028" stroke="#00D4FF" stroke-width="1.5"/>
+    <!-- Eyes -->
+    <g fill="#66E5FF">
+      <ellipse cx="-7" cy="-10" rx="4" ry="4.5"/>
+      <ellipse cx="7" cy="-10" rx="4" ry="4.5"/>
+      <circle cx="-6" cy="-11" r="1.5" fill="#E0F7FF"/>
+      <circle cx="8" cy="-11" r="1.5" fill="#E0F7FF"/>
+    </g>
+    <!-- Happy mouth -->
+    <path d="M-6,2 Q0,10 6,2" fill="none" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Antenna -->
+    <line x1="0" y1="-28" x2="0" y2="-42" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="0" cy="-44" r="3" fill="#66E5FF" filter="url(#glow)"/>
+    <!-- Sparkles -->
+    <g fill="#00D4FF" opacity="0.6">
+      <circle cx="22" cy="-16" r="2"/>
+      <circle cx="28" cy="-6" r="1.2"/>
+      <circle cx="-24" cy="-4" r="1.5"/>
+      <line x1="22" y1="-16" x2="26" y2="-16" stroke="#00D4FF" stroke-width="0.5"/>
+      <line x1="24" y1="-18" x2="24" y2="-14" stroke="#00D4FF" stroke-width="0.5"/>
+    </g>
+    <!-- Digital sparks -->
+    <g stroke="#00D4FF" stroke-width="1" stroke-linecap="round" opacity="0.5">
+      <line x1="-16" y1="14" x2="-8" y2="22"/>
+      <line x1="8" y1="22" x2="16" y2="14"/>
+    </g>
+  </g>
+
+  <!-- ===== Connection ===== -->
+  <g opacity="0.5">
+    <path d="M315,145 Q340,125 365,145" fill="none" stroke="url(#gradConnect)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <path d="M315,155 Q340,175 365,155" fill="none" stroke="url(#gradConnect)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <circle cx="340" cy="145" r="5" fill="#9B59B6" opacity="0.6"/>
+    <circle cx="340" cy="145" r="2" fill="#C084FC"/>
+  </g>
+
+  <!-- ===== AI Chip ===== -->
+  <g transform="translate(340,295)" opacity="0.12">
+    <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#4FC3F7" stroke-width="1.5"/>
+    <line x1="-24" y1="-5" x2="-18" y2="-5" stroke="#4FC3F7" stroke-width="1"/>
+    <line x1="-24" y1="0" x2="-18" y2="0" stroke="#4FC3F7" stroke-width="1"/>
+    <line x1="-24" y1="5" x2="-18" y2="5" stroke="#4FC3F7" stroke-width="1"/>
+    <line x1="18" y1="-5" x2="24" y2="-5" stroke="#4FC3F7" stroke-width="1"/>
+    <line x1="18" y1="0" x2="24" y2="0" stroke="#4FC3F7" stroke-width="1"/>
+    <line x1="18" y1="5" x2="24" y2="5" stroke="#4FC3F7" stroke-width="1"/>
+    <circle cx="0" cy="0" r="4.5" fill="#4FC3F7"/>
+    <circle cx="0" cy="0" r="2" fill="#1a1b2e"/>
+  </g>
+
+  <!-- ===== Title ===== -->
+  <text x="340" y="360" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="30" font-weight="700" fill="#FFFFFF" letter-spacing="6">大彤小熠</text>
+
+  <!-- Subtitle -->
+  <text x="340" y="388" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="11" fill="#4FC3F7" letter-spacing="8" opacity="0.8">DA TONG XIAO YI</text>
+
+  <!-- Decorative side lines -->
+  <line x1="180" y1="375" x2="255" y2="375" stroke="#4FC3F7" stroke-width="0.5" opacity="0.3"/>
+  <line x1="425" y1="375" x2="500" y2="375" stroke="#4FC3F7" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- Tagline -->
+  <text x="340" y="422" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="13" fill="#8899AA" letter-spacing="3">智能成长伙伴 · AI Children Agent</text>
+
+  <!-- Bottom corner brackets -->
+  <g stroke="#4FC3F7" stroke-width="0.5" opacity="0.15" fill="none">
+    <path d="M80,430 L80,455 L105,455"/>
+    <path d="M600,430 L600,455 L575,455"/>
+  </g>
+
+  <!-- Bottom decorative dash -->
+  <line x1="270" y1="465" x2="410" y2="465" stroke="#4FC3F7" stroke-width="0.5" opacity="0.2"/>
+  <circle cx="270" cy="465" r="2" fill="#4FC3F7" opacity="0.3"/>
+  <circle cx="410" cy="465" r="2" fill="#4FC3F7" opacity="0.3"/>
+</svg>

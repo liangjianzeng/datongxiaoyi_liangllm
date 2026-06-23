@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiangLLM - 本地大模型管理代理</title>
+  <link rel="icon" type="image/x-icon" href="assets/大彤小熠.ico">
+  <link rel="icon" type="image/png" sizes="256x256" href="assets/大彤小熠-256.png">
+  <link rel="apple-touch-icon" href="assets/大彤小熠-512.png">
+  <meta name="theme-color" content="#0a1628">
+  <!-- Vue 3 + Element Plus CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/element-plus"></script>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <!-- Icons -->
+  <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+  <!-- Chart.js for metrics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/style.css?v=9">
+</head>
+<body>
+  <div id="app">
+    <el-container style="height: 100vh;">
+      <!-- Sidebar -->
+      <el-aside width="220px" class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <img src="assets/大彤小熠-256.png" alt="大彤小熠" class="logo-image">
+            <div class="logo-text-group">
+              <span class="logo-text">LiangLLM</span>
+              <span class="logo-sub">本地大模型管理代理</span>
+            </div>
+          </div>
+        </div>
+
+        <el-menu
+          :default-active="activeView"
+          @select="onMenuSelect"
+          background-color="transparent"
+          text-color="var(--text-secondary)"
+          active-text-color="var(--accent)"
+        >
+          <el-menu-item index="dashboard">
+            <el-icon><Monitor /></el-icon>
+            <span>仪表盘</span>
+          </el-menu-item>
+          <el-menu-item index="models">
+            <el-icon><Cpu /></el-icon>
+            <span>模型管理</span>
+          </el-menu-item>
+          <el-menu-item index="chat">
+            <el-icon><ChatDotSquare /></el-icon>
+            <span>对话</span>
+          </el-menu-item>
+          <el-menu-item index="config">
+            <el-icon><Setting /></el-icon>
+            <span>参数配置</span>
+          </el-menu-item>
+          <el-menu-item index="metrics">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>性能指标</span>
+          </el-menu-item>
+          <el-menu-item index="benchmark">
+            <el-icon><Histogram /></el-icon>
+            <span>基准测试</span>
+          </el-menu-item>
+          <el-menu-item index="logs">
+            <el-icon><Tickets /></el-icon>
+            <span>日志管理</span>
+          </el-menu-item>
+        </el-menu>
+
+        <div class="sidebar-footer">
+          <div class="backend-status" :class="backendInfo?.available ? 'online' : 'offline'">
+            <span class="status-dot"></span>
+            <span>{{ backendInfo?.label || '等待后端' }}</span>
+          </div>
+          <div class="api-info">API: 127.0.0.1:19600</div>
+        </div>
+      </el-aside>
+
+      <!-- Main Content -->
+      <el-main class="main-content">
+        <!-- Dashboard View -->
+        <div v-show="activeView === 'dashboard'" class="view-panel">
+          <dashboard-panel
+            :models="models"
+            :instances="instances"
+            :backend="backendInfo"
+            :metrics-summary="metricsSummary"
+            :metrics-data="metricsData"
+            @refresh="refreshAll"
+          ></dashboard-panel>
+        </div>
+
+        <!-- Models View -->
+        <div v-show="activeView === 'models'" class="view-panel">
+          <model-manager
+            :models="models"
+            :instances="instances"
+            :loading-model="loadingModel"
+            :unloading-model="unloadingModel"
+            :scanning="scanning"
+            @load-model="onLoadModel"
+            @unload-model="onUnloadModel"
+            @refresh="refreshModels"
+          ></model-manager>
+        </div>
+
+        <!-- Chat View -->
+        <div v-show="activeView === 'chat'" class="view-panel">
+          <chat-panel
+            :instances="instances"
+            :api-base="apiBase"
+          ></chat-panel>
+        </div>
+
+        <!-- Config View -->
+        <div v-show="activeView === 'config'" class="view-panel">
+          <config-panel
+            :models="models"
+            :profiles="profiles"
+            :selected-model-params="selectedModelParams"
+            @save-model-config="onSaveModelConfig"
+            @save-profile="onSaveProfile"
+            @delete-profile="onDeleteProfile"
+            @select-model="onSelectModelForConfig"
+          ></config-panel>
+        </div>
+
+        <!-- Metrics View -->
+        <div v-show="activeView === 'metrics'" class="view-panel">
+          <metrics-panel
+            :metrics="metricsData"
+            :instances="instances"
+            @refresh="refreshMetrics"
+            @reset="resetMetrics"
+          ></metrics-panel>
+        </div>
+
+        <!-- Benchmark View -->
+        <div v-show="activeView === 'benchmark'" class="view-panel">
+          <benchmark-panel
+            :instances="instances"
+          ></benchmark-panel>
+        </div>
+
+        <!-- Logs View -->
+        <div v-show="activeView === 'logs'" class="view-panel">
+          <log-panel></log-panel>
+        </div>
+      </el-main>
+    </el-container>
+  </div>
+
+  <!-- App JavaScript -->
+  <script src="js/api.js?v=9"></script>
+  <script src="js/components/dashboard-panel.js?v=7"></script>
+  <script src="js/components/model-manager.js?v=7"></script>
+  <script src="js/components/config-panel.js?v=7"></script>
+  <script src="js/components/chat-panel.js?v=9"></script>
+  <script src="js/components/metrics-panel.js?v=7"></script>
+  <script src="js/components/benchmark-panel.js?v=7"></script>
+  <script src="js/components/log-panel.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
+</body>
+</html>

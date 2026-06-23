@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/venv/
+
+# Node
+node_modules/
+release/
+
+# Runtime data (user-generated, never ship with repo)
+log/
+*.log
+models/
+backend/models/
+backend/log/
+backend/config/
+config/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.exe
+*.msi
+dist/
+
+# One-off scratch / debug scripts (local only)
+patch.js
+patch_api.js
+q.js
+backend/test_*.py
+backend/_*.py
+backend/*.tmp.py
+_frontend/

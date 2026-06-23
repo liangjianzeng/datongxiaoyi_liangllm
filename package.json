@@ -1,0 +1,54 @@
+{
+  "name": "liangllm",
+  "version": "0.1.0",
+  "description": "LiangLLM - 本地大模型管理代理工具 (大彤小熠 AI 智能体)",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:backend": "pyinstaller --onefile --name liangllm-backend --distpath dist backend/server.py",
+    "build:frontend": "node scripts/build.js",
+    "pack": "electron-builder --win portable",
+    "dist": "electron-builder --win --x64"
+  },
+  "author": "LiangLLM",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.liangllm.app",
+    "productName": "LiangLLM",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "frontend/assets/大彤小熠.ico"
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerSidebar": null
+    }
+  }
+}
