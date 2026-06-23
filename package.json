@@ -4,6 +4,7 @@
   "description": "LiangLLM - 本地大模型管理代理工具 (大彤小熠 AI 智能体)",
   "main": "electron/main.js",
   "scripts": {
+    "postinstall": "node scripts/install-electron.js",
     "start": "electron .",
     "build:backend": "pyinstaller --onefile --name liangllm-backend --distpath dist backend/server.py",
     "build:frontend": "node scripts/build.js",

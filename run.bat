@@ -38,13 +38,17 @@ echo [OK] Python:  !PY_VER!
 echo.
 
 REM ---------- 3. Frontend deps ----------
+set "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/"
+set "npm_config_electron_mirror=https://npmmirror.com/mirrors/electron/"
+set "npm_config_registry=https://registry.npmmirror.com"
 if not exist "node_modules\" (
-    echo [1/3] Installing frontend deps...
+    echo [1/3] Installing frontend deps from npmmirror...
     call npm install --registry https://registry.npmmirror.com
     if errorlevel 1 (
+        echo       npmmirror failed, retrying default registry with ELECTRON_MIRROR...
         call npm install
         if errorlevel 1 (
-            echo [ERROR] npm install failed.
+            echo [ERROR] npm install failed. Check network.
             pause
             exit /b 1
         )
