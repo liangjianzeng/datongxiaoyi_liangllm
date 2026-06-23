@@ -91,8 +91,46 @@ window.LiangApi = {
   runBenchmark(family, params = {}) {
     return this._fetch("/api/benchmark", { method: "POST", body: { family, ...params } });
   },
-
+  getBenchmarkTests()  { return this._fetch("/api/benchmark/tests"); },
   getBenchmarkReport(taskId) { return this._fetch(`/api/benchmark/${encodeURIComponent(taskId)}`); },
-  listBenchmarks()     { return this._fetch("/api/benchmarks"); },
-  getLog(tail = 200)   { return this._fetch(`/api/log?tail=${tail}`); },
+  getBenchmarkEvents(taskId, lastId) {
+    let q = taskId ? `?task_id=${encodeURIComponent(taskId)}` : "";
+    if (lastId) q += (q ? "&" : "?") + `last_id=${encodeURIComponent(lastId)}`;
+    return this._fetch(`/api/benchmark/events${q}`);
+  },
+  getBenchmarkExportUrl(taskId, format = "json") {
+    return `${API_BASE}/api/benchmark/export/${encodeURIComponent(taskId)}?format=${encodeURIComponent(format)}`;
+  },
+  cancelBenchmark()   { return this._fetch("/api/benchmark/cancel", { method: "POST" }); },
+
+  getLog(tail = 200)  { return this._fetch(`/api/log?tail=${tail}`); },
+  getLogFiles()       { return this._fetch("/api/logs/files"); },
+  getLogDays()        { return this._fetch("/api/logs/days"); },
+  getLogSummary(days = 7) { return this._fetch(`/api/logs/summary?days=${encodeURIComponent(days)}`); },
+  queryLogs(params = {}) {
+    const qs = Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+      .join("&");
+    return this._fetch(`/api/logs${qs ? `?${qs}` : ""}`);
+  },
+  archiveLogDay(day)  { return this._fetch(`/api/logs/archive/${encodeURIComponent(day)}`, { method: "POST" }); },
+  archiveLogsBefore(days = 30) {
+    return this._fetch("/api/logs/archive-before", { method: "POST", body: { days } });
+  },
+  deleteLogDay(day)   { return this._fetch(`/api/logs/day/${encodeURIComponent(day)}`, { method: "DELETE" }); },
+  cleanupLogsBefore(days = 30) {
+    return this._fetch("/api/logs/cleanup", { method: "POST", body: { days } });
+  },
+  getLogDownloadUrl(day) {
+    return `${API_BASE}/api/logs/download/${encodeURIComponent(day || "")}`;
+  },
+
+  getSystemInfo()     { return this._fetch("/api/system/info"); },
+  scanBackends()      { return this._fetch("/api/system/scan-backends", { method: "POST", body: {} }); },
+  scanModels(modelsDir) { return this._fetch("/api/system/scan-models", { method: "POST", body: { models_dir: modelsDir } }); },
+  testUpstream(body)  { return this._fetch("/api/system/test-upstream", { method: "POST", body }); },
+  resetSystemConfig() { return this._fetch("/api/system/reset-config", { method: "POST", body: {} }); },
 };
+
+window.api = window.LiangApi;
