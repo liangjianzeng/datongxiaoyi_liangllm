@@ -5,6 +5,34 @@
 
 ---
 
+## 零步走 — 环境前置（换机器必看）
+
+第一次在一台新机器上跑，**只需要装 3 样东西**：
+
+1. **Python 3.11+** — https://www.python.org/downloads/
+2. **Node.js 18+** — https://nodejs.org/
+3. **llama-server**（本地模型推理核心）：
+   - Windows：去 https://github.com/ggml-org/llama.cpp/releases 下 `llama-server.exe`，放到 `models/llama-server.exe`
+   - macOS / Linux：`cmake -B build && cmake --build build --config Release --target llama-server`
+
+4. **下载一份 .gguf 模型**（Qwen2.5-7B-GGUF · DeepSeek-V3 · Llama-3.1 都行），放到 `models/` 目录。
+
+> 没有 llama-server 的情况下，后端、仪表盘、基准测试面板都能正常打开；只有「对话」会因为 8080 端口没有模型而空。
+>
+> 前端 UI 依赖外网 CDN（unpkg / jsdelivr）。首次打开需要能访问外网加载 Vue 3 和 Element Plus；离线环境请把 Vue / Element Plus / chart.js 本地化后再打包。
+
+启动：
+
+```cmd
+git clone https://github.com/liangjianzeng/datongxiaoyi_liangllm.git
+cd datongxiaoyi_liangllm
+run.bat          # 自动装 venv + npm + Electron（Windows 一键）
+```
+
+打开 Dashboard → 点「加载模型」→ 选你下的 .gguf → 开始对话。
+
+---
+
 ## 一、关于
 
 **LiangLLM APP** 是一款面向个人/团队的本地 LLM 图形化管理工具，核心目标：
