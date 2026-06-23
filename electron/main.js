@@ -14,7 +14,7 @@
  *     └── creates Tray icon (optional)
  */
 
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn, execSync } = require('child_process');
@@ -262,6 +262,33 @@ ipcMain.handle('restart-backend', () => {
   stopBackend();
   setTimeout(() => startBackend(), 1000);
   return { ok: true };
+});
+
+ipcMain.handle('select-folder', async (_evt, opts) => {
+  const win = BrowserWindow.getFocusedWindow() || mainWindow;
+  const result = await dialog.showOpenDialog(win, {
+    title: (opts && opts.title) || '选择文件夹',
+    properties: ['openDirectory'],
+    defaultPath: (opts && opts.defaultPath) || undefined,
+  });
+  if (result.canceled || !result.filePaths.length) return { ok: false };
+  return { ok: true, path: result.filePaths[0] };
+});
+
+ipcMain.handle('select-file', async (_evt, opts) => {
+  const win = BrowserWindow.getFocusedWindow() || mainWindow;
+  const filters = (opts && opts.filters) || [
+    { name: '可执行文件', extensions: ['exe', 'bat', 'cmd', 'sh'] },
+    { name: '所有文件', extensions: ['*'] },
+  ];
+  const result = await dialog.showOpenDialog(win, {
+    title: (opts && opts.title) || '选择文件',
+    properties: ['openFile'],
+    filters,
+    defaultPath: (opts && opts.defaultPath) || undefined,
+  });
+  if (result.canceled || !result.filePaths.length) return { ok: false };
+  return { ok: true, path: result.filePaths[0] };
 });
 
 // ── App Lifecycle ───────────────────────────

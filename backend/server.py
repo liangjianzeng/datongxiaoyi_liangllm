@@ -37,7 +37,12 @@ from process_manager import ProcessManager, LLAMA_PORT
 from config_manager import ConfigManager
 from chat_engine import ChatEngine
 from metrics_collector import MetricsCollector, InferenceRecord
-from backend_selector import detect_backend, list_all_available_backends
+from backend_selector import (
+    detect_backend,
+    list_all_available_backends,
+    scan_system_for_llama_servers,
+    scan_models_dir,
+)
 from benchmark_runner import BenchmarkRunner, AVAILABLE_TESTS
 from logger_manager import LoggerManager, init_logger_manager, get_logger_manager
 
@@ -1078,6 +1083,219 @@ async def get_instance(family: str):
         "cpu_percent": round(inst.cpu_percent, 1),
         "log_file": inst.log_file,
     }
+
+
+@app.get("/api/system/info")
+async def get_system_info():
+    import psutil as _psutil
+    global_config = config_manager.get_global()
+    user_llama_dir = global_config.get("llama_backend_dir", "")
+    user_server_exe = global_config.get("llama_server_exe", "")
+    user_models_dir = global_config.get("models_dir", "") or MODELS_DIR
+
+    picked_backend = detect_backend(
+        LLM_PROJECT,
+        user_llama_dir=user_llama_dir,
+        user_server_exe=user_server_exe,
+        preference=global_config.get("backend_preference", "auto"),
+    )
+    all_backends = list_all_available_backends(
+        LLM_PROJECT,
+        user_llama_dir=user_llama_dir,
+        user_server_exe=user_server_exe,
+    )
+    model_scan = scan_models_dir(user_models_dir)
+    system_servers = scan_system_for_llama_servers()
+
+    cpu_count = _psutil.cpu_count(logical=True) or 0
+    mem = _psutil.virtual_memory()
+    disk = _psutil.disk_usage(os.path.abspath(APP_ROOT))
+
+    gpu_list = []
+    try:
+        import subprocess as _sp
+        r = _sp.run(
+            ["nvidia-smi",
+             "--query-gpu=index,name,memory.total,memory.free,utilization.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+            creationflags=_sp.CREATE_NO_WINDOW if platform.system() == "Windows" else 0,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            for line in r.stdout.strip().splitlines():
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) >= 5:
+                    try:
+                        gpu_list.append({
+                            "index": int(parts[0]), "name": parts[1],
+                            "mem_total_mb": int(parts[2]),
+                            "mem_free_mb": int(parts[3]),
+                            "util_pct": int(parts[4]),
+                        })
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
+    return {
+        "platform": platform.platform(),
+        "python": sys.version,
+        "cpu": {"count": cpu_count},
+        "memory": {
+            "total_mb": round(mem.total / 1024 / 1024),
+            "available_mb": round(mem.available / 1024 / 1024),
+            "percent": mem.percent,
+        },
+        "disk": {
+            "total_gb": round(disk.total / 1024 / 1024 / 1024, 1),
+            "free_gb": round(disk.free / 1024 / 1024 / 1024, 1),
+            "percent": disk.percent,
+        },
+        "gpu": gpu_list,
+        "app": {
+            "root": os.path.abspath(APP_ROOT),
+            "backend_dir": os.path.abspath(BACKEND_DIR),
+            "config_dir": os.path.abspath(CONFIG_DIR),
+            "log_dir": os.path.abspath(LOG_DIR),
+            "models_dir_fallback": os.path.abspath(MODELS_DIR),
+        },
+        "models_dir": os.path.abspath(user_models_dir),
+        "models_scan": {
+            "families_count": len(model_scan["families"]),
+            "files_count": len(model_scan["files"]),
+            "families": model_scan["families"][:12],
+            "top_files": model_scan["files"][:30],
+        },
+        "llama_backend": {
+            "picked": {
+                "kind": picked_backend.kind, "label": picked_backend.label,
+                "available": picked_backend.available,
+                "server_path": picked_backend.server_path,
+                "root_dir": picked_backend.root_dir,
+                "gpu_devices": picked_backend.gpu_devices,
+            },
+            "all_backends": [
+                {
+                    "kind": b.kind, "label": b.label,
+                    "available": b.available,
+                    "server_path": b.server_path, "root_dir": b.root_dir,
+                    "gpu_devices": b.gpu_devices,
+                } for b in all_backends
+            ],
+            "system_found_paths": system_servers,
+        },
+        "user_paths": {
+            "llama_backend_dir": user_llama_dir,
+            "llama_server_exe": user_server_exe,
+        },
+    }
+
+
+@app.post("/api/system/scan-backends")
+async def rescan_backends():
+    global_config = config_manager.get_global()
+    user_llama_dir = global_config.get("llama_backend_dir", "")
+    user_server_exe = global_config.get("llama_server_exe", "")
+    picked = detect_backend(
+        LLM_PROJECT, user_llama_dir=user_llama_dir,
+        user_server_exe=user_server_exe,
+        preference=global_config.get("backend_preference", "auto"),
+    )
+    all_b = list_all_available_backends(
+        LLM_PROJECT, user_llama_dir=user_llama_dir,
+        user_server_exe=user_server_exe,
+    )
+    system_paths = scan_system_for_llama_servers()
+    return {
+        "picked": {
+            "kind": picked.kind, "label": picked.label,
+            "available": picked.available,
+            "server_path": picked.server_path, "root_dir": picked.root_dir,
+        },
+        "all_backends": [
+            {
+                "kind": b.kind, "label": b.label,
+                "available": b.available,
+                "server_path": b.server_path, "root_dir": b.root_dir,
+            } for b in all_b
+        ],
+        "system_found_paths": system_paths,
+    }
+
+
+@app.post("/api/system/scan-models")
+async def rescan_models(body: dict = Body(default_factory=dict)):
+    target_dir = body.get("models_dir", "")
+    if not target_dir:
+        global_config = config_manager.get_global()
+        target_dir = global_config.get("models_dir", "") or MODELS_DIR
+    target_dir = os.path.abspath(target_dir)
+    if not os.path.isdir(target_dir):
+        return {"ok": False, "error": f"目录不存在: {target_dir}", "dir": target_dir}
+    result = scan_models_dir(target_dir)
+    return {
+        "ok": True, "dir": target_dir,
+        "families_count": len(result["families"]),
+        "files_count": len(result["files"]),
+        "families": result["families"][:30],
+        "top_files": result["files"][:80],
+    }
+
+
+@app.post("/api/system/test-upstream")
+async def test_upstream(body: dict = Body(...)):
+    import httpx
+    base_url = (body.get("base_url", "") or "").rstrip("/")
+    api_key = body.get("api_key", "")
+    provider = body.get("provider", "openai")
+    if not base_url:
+        return {"ok": False, "error": "base_url 不能为空"}
+    url = base_url + "/v1/models"
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            text = resp.text[:500]
+            try:
+                j = resp.json()
+                model_ids = [m.get("id", "") for m in (j.get("data", []) or []) if isinstance(m, dict)]
+            except Exception:
+                model_ids = []
+            return {
+                "ok": resp.status_code == 200,
+                "status_code": resp.status_code,
+                "models_count": len(model_ids),
+                "models": model_ids[:20],
+                "provider": provider, "base_url": base_url,
+                "raw": text[:300],
+            }
+    except httpx.TimeoutException as e:
+        return {"ok": False, "error": f"超时: {e}", "provider": provider, "base_url": base_url}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "provider": provider, "base_url": base_url}
+
+
+@app.post("/api/system/apply-paths")
+async def apply_paths(body: dict = Body(...)):
+    cfg = config_manager.get_global()
+    changed = []
+    for k in ("llama_backend_dir", "llama_server_exe", "models_dir",
+              "backend_preference", "default_host", "default_port_range"):
+        if k in body:
+            cfg[k] = body[k]
+            changed.append(k)
+    if cfg.get("models_dir") and os.path.isdir(cfg["models_dir"]):
+        model_manager = ModelManager(cfg["models_dir"])
+    config_manager.save_global(cfg)
+    return {"ok": True, "changed": changed}
+
+
+@app.post("/api/system/reset-config")
+async def reset_config():
+    config_manager.save_global(config_manager._default_global())
+    return {"ok": True, "config": config_manager.get_global()}
 
 
 FRONTEND_DIR = os.path.join(APP_ROOT, "frontend")

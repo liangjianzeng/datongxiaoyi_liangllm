@@ -3,7 +3,7 @@ config_manager.py — Configuration Profiles Persistence
 
 Manages parameter profiles (presets) as JSON files, allowing users to
 save/load/delete model configuration sets.
-Reference: LM Studio preset system
+Also stores system-wide settings (llamaCPP dir, model dir, etc.)
 """
 
 import os
@@ -33,13 +33,10 @@ class ConfigManager:
             try:
                 with open(self._global_config_path, "r", encoding="utf-8") as f:
                     saved = json.load(f)
-                # Merge with defaults so old configs always get new defaults
                 defaults = self._default_global()
                 merged = dict(defaults)
                 merged.update(saved)
-                # Always enforce: startup_behavior defaults to "idle"
                 merged["startup_behavior"] = merged.get("startup_behavior", "idle")
-                # Save back if anything was merged
                 if merged != saved:
                     self.save_global(merged)
                 return merged
@@ -159,11 +156,31 @@ class ConfigManager:
     def _default_global(self) -> dict:
         return {
             "theme": "dark",
-            "backend_preference": "auto",
+            "language": "zh-CN",
+            "backend_preference": "auto",          # auto | cuda | vulkan | sycl | cpu
+            "llama_backend_dir": "",              # 用户指定的 llama-cpp 根目录（扫描起点）
+            "llama_server_exe": "",               # 直接指向 llama-server.exe 的路径（优先级最高）
+            "models_dir": "",                     # 用户指定的模型目录
             "default_port_range": [8080, 8099],
-            "startup_behavior": "idle",       # idle | auto | last_model
-            "auto_load_model": None,          # model family to auto-load (startup_behavior=auto)
+            "default_host": "127.0.0.1",
+            "startup_behavior": "idle",           # idle | auto | last_model
+            "auto_load_model": None,
             "last_loaded_model": None,
+            "gpu_layers": 99,                     # 默认 -ngl
+            "ctx_size": 32768,
+            "threads": 0,                         # 0 = 自动
+            "batch_size": 1024,
+            "mmap": True,
+            "mlock": False,
+            "flash_attn": False,
+            "cont_batching": False,
+            "parallel": 1,
             "log_level": "info",
+            "log_retention_days": 30,
+            "api_key": "",
+            "api_provider": "llama-cpp",          # llama-cpp | vLLM | Ollama | OpenAI | Custom
+            "api_base_url": "",                   # 自定义上游 OpenAI 兼容 endpoint
+            "auto_update_check": True,
+            "telemetry": False,
             "max_startup_wait_seconds": 120,
         }

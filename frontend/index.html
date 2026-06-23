@@ -57,6 +57,10 @@
             <el-icon><Setting /></el-icon>
             <span>参数配置</span>
           </el-menu-item>
+          <el-menu-item index="system">
+            <el-icon><Tools /></el-icon>
+            <span>系统设置</span>
+          </el-menu-item>
           <el-menu-item index="metrics">
             <el-icon><DataAnalysis /></el-icon>
             <span>性能指标</span>
@@ -129,6 +133,14 @@
           ></config-panel>
         </div>
 
+        <!-- System Settings View -->
+        <div v-show="activeView === 'system'" class="view-panel">
+          <system-panel
+            :global-config="globalConfig"
+            @save-global-config="onSaveGlobalConfig"
+          ></system-panel>
+        </div>
+
         <!-- Metrics View -->
         <div v-show="activeView === 'metrics'" class="view-panel">
           <metrics-panel
@@ -155,14 +167,15 @@
   </div>
 
   <!-- App JavaScript -->
-  <script src="js/api.js?v=9"></script>
+  <script src="js/api.js?v=10"></script>
   <script src="js/components/dashboard-panel.js?v=7"></script>
   <script src="js/components/model-manager.js?v=7"></script>
   <script src="js/components/config-panel.js?v=7"></script>
+  <script src="js/components/system-panel.js?v=1"></script>
   <script src="js/components/chat-panel.js?v=9"></script>
   <script src="js/components/metrics-panel.js?v=7"></script>
   <script src="js/components/benchmark-panel.js?v=7"></script>
   <script src="js/components/log-panel.js?v=7"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="js/app.js?v=10"></script>
 </body>
 </html>

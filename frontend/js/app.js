@@ -2,12 +2,13 @@
  * app.js — LiangLLM Main Vue 3 Application
  */
 
-const { Monitor, Cpu, ChatDotSquare, Setting, DataAnalysis, Refresh, Loading, Histogram } = ElementPlusIconsVue;
+const { Monitor, Cpu, ChatDotSquare, Setting, DataAnalysis, Refresh, Loading, Histogram, Tools, FolderOpened, Connection, InfoFilled } = ElementPlusIconsVue;
 
 const app = Vue.createApp({
   data() {
     return {
       activeView: 'dashboard',
+      globalConfig: {},
       models: [],
       instances: [],
       backendInfo: null,
@@ -55,6 +56,7 @@ const app = Vue.createApp({
         this.backendInfo = status.backend;
         this.backendInfo.models_dir = status.models_dir;
         this.backendInfo.server_path = status.backend.server_path;
+        this.globalConfig = status.config || {};
         this.models = status.models_count > 0 ? this.models : [];
 
         if (status.backend.available) {
@@ -304,6 +306,7 @@ app.component('dashboard-panel', window.DashboardPanel);
 app.component('model-manager', window.ModelManager);
 app.component('chat-panel', window.ChatPanel);
 app.component('config-panel', window.ConfigPanel);
+app.component('system-panel', window.SystemPanel);
 app.component('metrics-panel', window.MetricsPanel);
 app.component('benchmark-panel', window.BenchmarkPanel);
 app.component('log-panel', window.LogPanel);
