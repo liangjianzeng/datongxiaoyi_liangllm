@@ -1,7 +1,7 @@
 # LiangLLM APP
 
 > Electron + FastAPI 的本地 LLM 管理控制台。一站式集成模型服务、推理调用、对话面板、实时监控与管理配置。
-> README.md 同步至 README.html · 2026-04-24
+> README.md 同步至 README.html · 2026-06-23
 
 ---
 
@@ -16,180 +16,233 @@
 
 ## 二、技术栈
 
-- **前端**：Electron 28 · Vue 3 (Vue CDN runtime) · Element Plus · 自定义暗色 CSS Variables · 内嵌 SVG 图标
-- **后端**：Python 3.10+ · FastAPI 0.110+ · Pydantic v2 · 自动探测 llama-server
-- **通信**：HTTP REST + SSE（`/v1/chat/completions` / stream）· IPC（Electron 主进程 ↔ renderer ↔ backend）
-- **服务支持**：OpenAI 兼容协议；目标后端为 llama.cpp server · vLLM · Ollama · MLX · DeepEP
+- **前端**：Electron 33 · Vue 3 (Vue CDN runtime) · Element Plus · 自定义暗色 CSS Variables · 内嵌 SVG 图标
+- **后端**：Python 3.11+ · FastAPI 0.110+ · Uvicorn · Pydantic v2 · httpx（流式代理）· 自动探测 llama-server
+- **通信**：HTTP REST + SSE（OpenAI 兼容 `/v1/chat/completions` · `/stream`）· IPC（Electron 主进程 ↔ renderer 传 backend URL / 重启后端）
+- **服务支持**：OpenAI 兼容协议；当前后端 llama.cpp server，可扩展 vLLM · Ollama · MLX · DeepEP
 
 ## 三、页面结构
 
-主窗口分为四大区：
+主窗口分为五大面板：
 
-- **仪表盘**：实例卡片 + GPU / 系统实时指标 + 快捷操作
-- **对话**：按实例管理的对话面板（带参数调节 & 流式输出）
-- **设置 / 实例管理**：全局配置 + 实例增删改 + 进程管理
-- **日志区**：滚动日志面板
+- **仪表盘**：实例概览 + GPU / 系统实时指标 + 快捷操作
+- **对话**：聊天面板（带系统提示词、温度/Top-P/Top-K/MaxTokens 参数折叠面板、SSE 流式输出）
+- **模型管理**：加载 / 卸载 / 切换模型族，实例生命周期
+- **基准测试**：内置多场景跑分与 Markdown 报告导出
+- **日志 / 指标 / 配置**：滚动日志、实时推理统计、全局设置
 
-## 四、今日变更一览（2026-04-24）
+## 四、今日变更一览（2026-06-23）
 
-### 对话面板
-- 重构 `chat-panel.js` 模板 + `style.css` 对话区
-- 浮动发送按钮（输入框右下），模型选择 / 参数按钮（齿轮）/ 新会话按钮
-- 参数折叠面板：系统提示词 + 温度 / Top-P / Top-K / MaxTokens；关闭时折叠为一行按钮
-- 全局暗色 CSS 变量覆盖，Element Plus 组件 + e-panel + 状态 Tag 统一风格
+### 对话引擎（关键修复）
+- 重构 `backend/chat_engine.py` 流式代理：**每次请求创建独立 `httpx.AsyncClient`**，彻底解决「第二次对话不响应」的连接池饥饿
+- SSE 解析改为 `split(/\r?\n/)`，兼容 Windows `\r\n` 与 Linux `\n` 行尾
+- `finally` 块强制清理 `streaming` / `streamContent` / `abortController`，防止状态泄漏
+- 单飞锁：`canSend` computed 确保并发发送被阻挡
 
-### 仪表盘 & 实例卡
-- 重写 `instance-card.js`：卡片布局、状态徽章、快捷按钮
-- 新增 el-card 详细信息弹窗（端口、模型、ctx、N_GPU、Batch、性能）
-- GPU 单卡进度条 + 显存条 + 使用率
-- 刷新 / 重置 / 停止 按实例拆分
+### 对话面板 UI
+- 重写 `frontend/css/style.css` 对话区：消息气泡（用户侧 neon 渐变、助手侧描边）、统一 14px 字号 1.65 行高、max-width 72%、圆角 16px/4px
+- 发送按钮 neon 边框 + hover 发光，滚动条 8px 暗青色
+- 深色主题统一变量：`--neon-cyan #22e7ff` · `--neon-violet #9d5bff` · 输入区 padding 16px 20px
+- 输入区 + 系统提示词面板不再刺眼，统一采用浅蓝暗青色调
 
-### 设置 & 实例管理
-- `settings-panel.js` + `backend.js`：实例列表、添加、编辑、删除
-- 动态端口（默认 8080, 8081...）、启动命令、进程启停
-- 进程管理（tasklist / taskkill 或 *nix kill），可独立重启单实例
-- FastAPI 统一入口：`POST /instances`、`DELETE /instances/{id}` 等
+### 前后端一体化
+- `electron/main.js` 动态 backend URL：spawn `backend/server.py` 固定端口 19600（127.0.0.1），IPC `get-backend-url` 暴露给 renderer
+- `frontend/js/api.js` 优先通过 IPC `window.liangllm.getBackendUrl()` 获取真实后端地址，回退到 `http://127.0.0.1:19600`
+- 后端仅绑定 127.0.0.1，CORS 白名单仅本地 19600，外网无法访问
+- 单文件后端 `backend/server.py`（统一入口），模块化 `chat_engine.py` / `model_manager.py` / `process_manager.py` / `metrics_collector.py` / `benchmark_runner.py` / `config_manager.py` / `logger_manager.py` / `backend_selector.py`
 
-### README
-- README.md 与 README.html 对齐
-- 新增「其他模型服务接入」章节（vLLM / Ollama / MLX / DeepEP / OpenAI 兼容）
-- 更新 API 列表、待办、页面结构
+### 一键启动
+- 根目录 `run.bat`：自动 pip venv + npm install + Electron 启动，自动清理 19600 / 8080 旧端口
+- `scripts/setup-cuda.ps1`：Windows CUDA 一键环境检测脚本
+- `scripts/build.js`：前端打包辅助
+- `package.json` Electron Builder portable + nsis 双目标
 
 ## 五、架构总览
 
 ```
-┌──────────────────────┐     ┌───────────────────────┐     ┌──────────────────────┐
-│   Electron 主进程     │────▶│   Renderer (Vue 3)     │────▶│   FastAPI backend    │
-│ main.js               │     │ dashboard / chat /    │     │ app/main.py          │
-│                       │     │ settings              │     │ routers/*.py         │
-└──────────────────────┘     └───────────────────────┘     └─────────┬────────────┘
-                                                                      │
-                                                           OpenAI 协议  │
-                                                                      ▼
-                                       ┌──────────────────────────────────────────────┐
-                                       │ 模型服务集群                                  │
-                                       │ llama.cpp server · vLLM · Ollama · MLX ...   │
-                                       └──────────────────────────────────────────────┘
+┌──────────────────────┐      IPC get-backend-url        ┌──────────────────────┐
+│   Electron 主进程     │────────────────────────────────▶│  Renderer (Vue 3)     │
+│   electron/main.js   │      spawn backend/server.py    │  dashboard / chat /   │
+│   preload.js          │                                  │  benchmark / config   │
+└──────────┬───────────┘                                  └──────────┬───────────┘
+           │                                                        │
+     127.0.0.1:19600                                         HTTP / SSE
+           │                                                        │
+           ▼                                                        ▼
+                    ┌──────────────────────────────────────────────┐
+                    │  backend/server.py  FastAPI 127.0.0.1:19600  │
+                    │  chat_engine.py   httpx.AsyncClient proxy     │
+                    │  model_manager.py  process_manager.py        │
+                    │  metrics_collector.py  benchmark_runner.py   │
+                    │  config_manager.py  logger_manager.py        │
+                    │  backend_selector.py                         │
+                    └───────────────────────┬──────────────────────┘
+                                            │  OpenAI 协议 / llama.cpp
+                                            ▼
+                              ┌───────────────────────────────────────────┐
+                              │  模型服务  llama.cpp server :8080+        │
+                              │  （可扩展 vLLM · Ollama · MLX · DeepEP） │
+                              └───────────────────────────────────────────┘
 ```
 
 ### 目录 / 模块
 
-- **前端**：`frontend/index.html` · `frontend/js/api.js` · `frontend/css/style.css` · `frontend/js/components/dashboard-panel.js` / `chat-panel.js` / `settings-panel.js` / `instance-card.js` / `gpu-panel.js` / `system-panel.js`
-- **后端**：`backend/app/main.py` · `routers/instances.py` · `routers/chat.py` · `routers/system.py` · `services/llama_runner.py` · `gpu_monitor.py` · `process_manager.py`
+```
+LiangLLM-App/
+├── backend/                 # FastAPI 127.0.0.1:19600
+│   ├── server.py             # 统一入口（1100+ 行）
+│   ├── chat_engine.py        # SSE 流式代理（独立 AsyncClient 每次请求）
+│   ├── model_manager.py      # 模型加载 / 卸载 / 切换族
+│   ├── process_manager.py    # 进程守护 / 启停 / 端口复用
+│   ├── metrics_collector.py  # 推理吞吐记录
+│   ├── benchmark_runner.py  # 多场景跑分 + Markdown 导出
+│   ├── config_manager.py    # 全局 / 实例 JSON 配置
+│   ├── logger_manager.py     # 滚动日志
+│   ├── backend_selector.py   # 自动探测 llama-server / 可用后端
+│   └── requirements.txt
+├── electron/
+│   ├── main.js               # 主进程 + spawn backend + IPC + Tray
+│   └── preload.js            # 安全桥接 window.liangllm
+├── frontend/
+│   ├── index.html            # Element Plus + Vue CDN runtime
+│   ├── css/style.css         # 暗色主题 CSS Variables + 对话区重写
+│   ├── js/api.js             # IPC 动态 backend URL 解析
+│   ├── js/app.js             # 应用装配
+│   └── js/components/        # 8 个 Vue 组件：
+│       ├── dashboard-panel.js
+│       ├── chat-panel.js
+│       ├── config-panel.js
+│       ├── benchmark-panel.js
+│       ├── metrics-panel.js
+│       ├── log-panel.js
+│       └── model-manager.js
+├── run.bat                   # Windows 一键启动
+├── package.json              # Electron Builder
+├── scripts/
+│   ├── build.js
+│   └── setup-cuda.ps1
+└── README.md / README.html
+```
 
 ## 六、核心模块说明
 
-| 模块 | 说明 |
-| --- | --- |
-| Electron 主进程 | 窗口、生命周期、IPC、环境检测 |
-| Dashboard | 实例卡片 + GPU 可视化 + 系统指标 + el-dialog 详情 |
-| Chat Panel | 模型选择 + 系统提示词 + 温度/TopP/TopK/MaxTokens + SSE 流式 + Markdown 渲染 |
-| Settings | 全局设置（日志等级、默认 prompt、API 地址）+ 实例增删改 + 启停 |
-| Process Manager | 跨平台进程守护、tasklist / taskkill / kill 封装 |
-| GPU Monitor | nvidia-smi / Metal 探测，实时显存/使用率/温度/功耗 |
+| 模块 | 文件 | 说明 |
+| --- | --- | --- |
+| FastAPI 主入口 | backend/server.py | /api/* 所有路由 + lifespan + CORS |
+| 聊天引擎 | backend/chat_engine.py | 独立 AsyncClient + SSE 代理 + metrics |
+| 模型管理 | backend/model_manager.py | GGUF 加载 + 族切换 |
+| 进程守护 | backend/process_manager.py | 跨平台 taskkill/kill 封装 |
+| 推理指标 | backend/metrics_collector.py | tokens/s · latency · 吞吐 |
+| 基准测试 | backend/benchmark_runner.py | 多场景 + Markdown / JSON 导出 |
+| 配置管理 | backend/config_manager.py | JSON 读写（gitignored） |
+| 日志 | backend/logger_manager.py | 滚动日志面板 |
+| 后端探测 | backend/backend_selector.py | 自动找 llama-server 二进制 |
+| Electron 主进程 | electron/main.js | 窗口 / IPC / spawn backend / Tray |
+| 安全桥 | electron/preload.js | 暴露 window.liangllm.* |
+| 前端 API | frontend/js/api.js | REST + SSE，动态 backend URL |
+| 聊天 UI | frontend/js/components/chat-panel.js | 模型选择 + 参数折叠 + SSE 流式 + 单飞锁 |
+| 仪表盘 | dashboard-panel.js | 实例 + GPU + 系统指标 |
+| 模型面板 | model-manager.js | 加载 / 卸载 |
+| 基准面板 | benchmark-panel.js | 跑分 + 看报告 |
+| 指标面板 | metrics-panel.js | tokens/s / 吞吐图表 |
+| 日志面板 | log-panel.js | 实时日志 |
+| 配置面板 | config-panel.js | 主题 / 日志等级 / 自动加载 |
 
 ## 七、主要 API 接口
 
 | Method | Path | 说明 |
 | --- | --- | --- |
-| `GET` | `/health` | 后端健康检查 |
-| `GET` | `/instances` | 列出所有实例 |
-| `POST` | `/instances` | 新增实例 |
-| `DELETE` | `/instances/{id}` | 删除实例 |
-| `POST` | `/instances/{id}/start` | 启动实例进程 |
-| `POST` | `/instances/{id}/stop` | 停止实例进程 |
-| `POST` | `/chat/completions` | 标准 Chat Completion（非流） |
-| `POST` | `/chat/completions/stream` | SSE 流式 Chat Completion |
-| `GET` | `/system/gpu` | GPU 实时指标 |
-| `GET` | `/system/info` | 系统信息 |
+| `GET` | `/api/status` | 后端状态 + 实例列表 + 配置 |
+| `GET` | `/api/models` | 已注册模型族 |
+| `POST` | `/api/models/load` | 加载指定模型族 |
+| `POST` | `/api/models/unload` | 卸载 |
+| `POST` | `/api/chat/completions` | OpenAI 兼容非流 |
+| `POST` | `/api/chat/stream` | SSE 流式（ChatEngine 代理到 llama-server） |
+| `GET` | `/api/metrics` | 推理指标 |
+| `GET` | `/api/benchmark/tests` | 可用跑分用例 |
+| `POST` | `/api/benchmark/run` | 执行跑分 |
+| `GET` | `/api/benchmark/report` | 最新跑分报告 |
+| `GET` | `/api/benchmark/export` | Markdown / JSON 导出 |
+| `GET` | `/api/logs` | 滚动日志 |
+| `POST` | `/api/logs/write` | 写日志 |
 
 ## 八、功能亮点
 
-- **多实例管理**：并行多个 llama.cpp server（或其他 OpenAI 兼容服务），不同模型、端口、进程。
-- **统一 OpenAI 兼容入口**：底层可为 llama.cpp / vLLM / Ollama / MLX，上层统一走 `/v1/chat/completions`。
-- **流式对话**：SSE 实时输出 + Markdown 渲染 + 代码块高亮。
-- **参数动态调节**：系统提示词、temperature、top_p、top_k、max_tokens，会话级。
-- **仪表盘 & 监控**：卡片化实例 + GPU 单卡进度条 + 系统内存 / CPU。
-- **暗色主题 + 模块化组件**：CSS Variables + Element Plus。
-- **可插拔后端**：实例 `type` 不同（`llama.cpp` / `vllm` / `ollama` / `openai`），只需统一协议。
+- **一键启动**：Windows `run.bat` 自动 pip venv + npm + Electron，清旧端口
+- **流式对话（已修复）**：SSE 实时 + `\r?\n` 跨平台解析 + 独立 AsyncClient + 单飞锁，连续多轮 OK
+- **参数动态调节**：系统提示词 / temperature / top_p / top_k / max_tokens，会话级折叠面板
+- **仪表盘 & 监控**：实例卡片 + GPU / CPU / 内存 + 实时指标 + 跑分图表
+- **基准测试**：内置多场景 + Markdown 报告下载
+- **暗色主题 + 对话区重写**：neon 渐变气泡 + 浅蓝青色输入区，无刺眼白底
+- **零云依赖**：仅绑定 127.0.0.1，CORS 仅本地；外网无法访问
+- **可插拔后端**：统一 OpenAI 协议，llama.cpp · vLLM · Ollama · MLX · DeepEP 直接填 base_url / model
 
 ## 九、启动
 
-```bash
-git clone <this repo>
+### Windows（一键）
+```cmd
 cd LiangLLM-App
-
-# 后端
-cd backend
-python -m venv .venv
-# Windows PowerShell:
-.\.venv\Scripts\Activate.ps1
-# macOS/Linux:
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 127.0.0.1 --port 8765 --reload
-
-# 前端
-npm install
-npm start
+run.bat
 ```
 
-启动本地模型示例：
+### 手动
+```bash
+# 后端
+cd backend
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS / Linux
+source venv/bin/activate
+pip install -r requirements.txt
+python server.py                         # 默认 127.0.0.1:19600
+
+# 前端（Electron）
+cd ..
+npm install
+npm start                                 # Electron 窗口自动拉起 + spawn backend
+```
+
+### 启动本地模型示例
 
 ```bash
-# macOS (Metal)
-./llama-server -m /path/to/model.gguf --port 8080 -ngl 99
-
-# Windows (CUDA / CPU 可选)
-llama-server.exe -m D:\models\model.gguf --port 8080 -ngl 99
-
+# llama.cpp server
+llama-server.exe -m D:\models\Qwen2.5-7B-Instruct-Q4_K_M.gguf --port 8080 -ngl 99
 # vLLM
 python -m vllm.entrypoints.openai.api_server --model /path/to/model --port 8081
-
 # Ollama
 ollama serve &
 ollama run <model-name>
 ```
 
-## 十、配置（全局 / 实例）
+## 十、配置（gitignored，本机私有）
 
-全局默认值保存在 Electron 用户目录 `config.json`，实例通过「设置」Tab 编辑。每个实例至少包含：
+全局：`config/liangllm.json`（主题 / backend_preference / 默认端口范围 / 启动行为 / 自动加载模型 / 日志等级）
 
-- `name`、`family`、`type`（`llama.cpp` / `vllm` / `ollama` / `openai`）
-- `base_url`（OpenAI 兼容地址，如 `http://127.0.0.1:8080/v1`）
-- `model`、`port`、`ctx_size`、`batch_size`、`n_gpu_layers`
-- `command`、`extra_args`（可选，用于启动进程）
+实例：`config/model_*.json`（每个模型族一套：family / port / n_gpu_layers / ctx_size 等）
 
-## 十一、使用说明
+> 两个目录 `config/` 和 `backend/config/` 均被 `.gitignore` 屏蔽，不会被提交到 Git。
 
-1. **添加实例**：「设置 / 实例管理」→ 添加实例 → 选择 type / port / model → 保存后启动。
-2. **查看仪表盘**：首页拉取所有实例 + GPU + 系统指标，点击实例卡查看详情。
-3. **对话**：「对话」Tab → 选择实例模型 → 设置系统提示词 + 参数 → 发送。
-4. **管理进程**：实例卡或设置中的 ▶/⏹ 按钮，底层走 process_manager。
-
-## 十二、接入其他模型服务
+## 十一、接入其他模型服务
 
 统一管理的关键 = **统一 OpenAI Chat Completion 协议 + 多实例配置**：
 
-- **llama.cpp server**：`http://127.0.0.1:8080/v1`，已实现 + SSE 流式。
-- **vLLM**：OpenAI 兼容，支持多卡 Continuous Batching；新增 `type=vllm`，后端走同一 Chat Completion 路由。
-- **Ollama**：`ollama serve` 自带 OpenAI 兼容 endpoint；在实例中填 Ollama base_url / model 即可。
-- **MLX (Apple Silicon)**：`mlx-lm serve` 或 `mlx-server`，Mac 本地推理。
-- **DeepEP / DeepSeek 系列**：推荐走 vLLM 或官方推理服务。
-- **云厂商**：OpenRouter / Together AI / DeepInfra / 智谱 / 百川，配 `type=openai` + `api_key`。
+- **llama.cpp server**：当前已实现 + SSE 流式
+- **vLLM**：OpenAI 兼容，支持多卡 Continuous Batching
+- **Ollama**：`ollama serve` 自带 OpenAI 兼容 endpoint
+- **MLX (Apple Silicon)**：`mlx-lm serve`
+- **DeepEP / DeepSeek 系列**：推荐走 vLLM
+- **云厂商**：OpenRouter / Together AI / DeepInfra / 智谱 / 百川，配 `api_key` 即可
 
-> 结论：任何实现 OpenAI Chat Completion 协议的服务，都可以作为 LiangLLM APP 的后端。
+## 十二、Roadmap
 
-## 十三、待办 / Roadmap
-
-- 支持 Ollama / vLLM / MLX 一键模板（自动填 base_url / model / 命令）
+- Ollama / vLLM / MLX 一键模板
 - 实例多会话记忆
-- Prompt 模板库（预设 + 用户自定义）
-- 历史对话导出（Markdown / JSON）
-- 多用户 / 远程访问（反向代理 + token）
+- Prompt 模板库
+- 历史对话导出
 - 自动重启 & 健康检查告警
-- CPU / Metal / CUDA 启动脚本一键生成
+- CPU / Metal / CUDA 一键启动脚本
 
-## 十四、License
+## 十三、License
 
 以仓库 LICENSE 文件为准开源/私有使用；第三方依赖遵守各自许可证。
